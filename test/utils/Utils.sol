@@ -8,6 +8,8 @@ import { FHE, euint128, inEuint128, inEaddress, inEbool } from "@fhenixprotocol/
 import { MockFheOps } from "@fhenixprotocol/contracts/utils/debug/MockFheOps.sol";
 
 import { Constants } from "test/utils/Constants.sol";
+import { FheHelper } from "test/utils/FheHelper.sol";
+import { Params } from "test/utils/Types.sol";
 
 contract Utils is Constants, Test {
     /*----------------------------------------------------------*|
@@ -64,14 +66,27 @@ contract Utils is Constants, Test {
     |*  # FUZZERS                                               *|
     |*----------------------------------------------------------*/
 
-    struct Params {
-        uint40 startTime;
-        uint40 duration;
-        uint256 reservePrice;
-    }
-
+    /// @dev Fuzzes the auction details with defaults for: proposer, tokenId and assetAddress.
     function fuzzAuctionDetails(Params memory params) internal view returns (Auction.Details memory) {
         // Bound start time
-        params.startTime = boundUint40(params.startTime, getBlockTimestamp(), MAX_UNIX_TIMESTAMP - MAX_DURATION);
+        params.startTime = boundUint40(params.startTime, getBlockTimestamp() + 1, MAX_UNIX_TIMESTAMP - MAX_DURATION);
+
+        // Bound duration - non-zero, up to max duration
+        params.duration = boundUint40(params.duration, 1, MAX_DURATION);
+
+        // Bound reserve price
+        params.reservePrice = bound(params.reservePrice, 0, INITIAL_BALANCE);
+
+        // Encrypt reserve price
+        inEuint128 memory encryptedRp = FheHelper.encrypt128(params.reservePrice);
+
+        return Auction.Details({
+            startTime: params.startTime,
+            proposer: proposer(),
+            duration: params.duration,
+            assetAddress: assetAddress(),
+            tokenId: TOKEN_ID,
+            reservePrice: encryptedRp
+        });
     }
 }

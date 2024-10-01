@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
 
+import { Auction } from "src/types/DataTypes.sol";
 import { VickreyAuction } from "src/VickreyAuction.sol";
 import { Vault } from "src/Vault.sol";
 import { EncryptedVault } from "src/EncryptedVault.sol";
@@ -119,5 +120,13 @@ abstract contract Base_Test is Calculations, Constants, Events, Utils {
 
     function decryptedTokenBalance(address user) internal view returns (uint256) {
         return FHE.decrypt(payment.balanceOfEncrypted(user));
+    }
+
+    function createAuction(Auction.Details memory details) internal {
+        // Reset the prank
+        resetPrank(users.proposer);
+
+        // Create the auction
+        auction.createAuction(details);
     }
 }

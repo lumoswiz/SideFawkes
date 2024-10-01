@@ -11,3 +11,10 @@ struct Users {
     // Default auction beneficiary.
     address beneficiary;
 }
+
+/// @dev Params for fuzzing auction details
+struct Params {
+    uint40 startTime;
+    uint40 duration;
+    uint256 reservePrice;
+}
