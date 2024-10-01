@@ -1,0 +1,16 @@
+createAuction.t.sol
+├── given when the auction hash has been made
+│   └── it should revert
+└── given when the auction hash has not been made
+    ├── when the caller is not the proposer
+    │   └── it should revert
+    └── when the caller is the proposer
+        ├── when the auction start timestamp is less than the current block timestamp
+        │   └── it should revert
+        └── when the auction start timestamp is greater than, or equal to, the current block timestamp
+            ├── when the auction duration is greater than the maximum duration
+            │   └── it should revert
+            └── when the auction duration is less than, or equal to, the maximum duration
+                ├── it should pull the ERC-721 asset from the caller to the contract
+                ├── it should emit a {VaultPull} event
+                └── it should set the auction hash as made

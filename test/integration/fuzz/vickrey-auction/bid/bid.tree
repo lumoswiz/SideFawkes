@@ -1,0 +1,38 @@
+bid.t.sol
+├── when the auction has not been made for the auction hash
+│   └── it should revert
+└── when the auction has been made for the auction hash
+    ├── when the auction is not on
+    │   └── it should revert
+    └── when the auction is on
+        ├── given when the caller has a previous bid
+        │   ├── when the new bid is less than, or equal to, the previous bid
+        │   │   └── it should revert
+        │   └── when the new bid is greater than their previous bid
+        │       ├── it should transfer the encrypted value of the difference between the new and previous bids from the caller to the contract
+        │       ├── it should update the bid for the caller in this auction to the new bid encrypted value
+        │       ├── given when the bid is less than, or equal to, the second highest bid
+        │       │   └── it should not change any further state variables
+        │       └── given when the bid is greater than the second highest bid
+        │           ├── given when the bid is less than, or equal to, the highest bid
+        │           │   └── it should updated the second highest bid to the caller's bid
+        │           └── given when the bid is greater than the highest bid
+        │               ├── it should update the highest bid to the caller's bid
+        │               └── it should update the beneficiary to the caller
+        └── given when the caller does not have a previous bid
+            ├── when the new bid is 0
+            │   └── it should revert
+            └── when the new bid is greater than 0
+                ├── it should transfer the encrypted value of the bid from the caller to the contract
+                ├── it should update the bid for the caller in this auction to the bid encrypted value
+                ├── given when the bid is less than, or equal to, the second highest bid
+                │   └── it should not change any further state variables
+                └── given when the bid is greater than the second highest bid
+                    ├── given when the bid is less than, or equal to, the highest bid
+                    │   └── it should updated the second highest bid to the caller's bid
+                    └── given when the bid is greater than the highest bid
+                        ├── it should update the highest bid to the caller's bid
+                        └── it should update the beneficiary to the caller
+
+
+
