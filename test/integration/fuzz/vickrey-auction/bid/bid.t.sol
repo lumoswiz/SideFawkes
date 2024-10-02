@@ -70,13 +70,13 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         auction.bid(auctionData, amount);
     }
 
-    /*----------------------------------------------------------*|
-    |*  # CALLER HAS NO PREVIOUS BIDS                           *|
-    |*----------------------------------------------------------*/
-
     modifier whenAuctionOn() {
         _;
     }
+
+    /*----------------------------------------------------------*|
+    |*  # CALLER HAS NO PREVIOUS BIDS                           *|
+    |*----------------------------------------------------------*/
 
     modifier givenWhenCallerNoPreviousBid() {
         _;
@@ -341,5 +341,318 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
 
         // Assert that the bidPerAddr is updated for alice
         assertEq(getBidPerAddr(keccak256(auctionData), users.alice), bid, "bidPerAddr");
+    }
+
+    /*----------------------------------------------------------*|
+    |*  # CALLER HAS A PREVIOUS BIDS                            *|
+    |*----------------------------------------------------------*/
+
+    modifier givenWhenCallerHasPreviousBid() {
+        _;
+    }
+
+    modifier whenBidLtEqPreviousBid() {
+        _;
+    }
+
+    function testFuzz_ShouldFail_NewBidLowerThanPreviousBid(
+        Params memory params,
+        uint40 time,
+        uint256 previousBid,
+        uint256 newBid
+    )
+        external
+        whenAuctionMade
+        whenAuctionOn
+        givenWhenCallerHasPreviousBid
+        whenBidLtEqPreviousBid
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        time = boundUint40(time, details.startTime, details.startTime + details.duration);
+        vm.warp(time);
+
+        // Setup previous bid
+        previousBid = bound(previousBid, BID2, INITIAL_BALANCE);
+        inEuint128 memory previousAmount = FheHelper.encrypt128(previousBid);
+        resetPrank(users.alice);
+        auction.bid(auctionData, previousAmount);
+
+        // Setup new bid - should be less than, or equal to, the previous bid
+        newBid = bound(newBid, 1, BID2);
+        inEuint128 memory newAmount = FheHelper.encrypt128(newBid);
+
+        // Try to bid
+        vm.expectRevert("MockFheOps: req");
+        auction.bid(auctionData, newAmount);
+    }
+
+    modifier whenBidGtPreviousBid() {
+        _;
+    }
+
+    function testFuzz_Bid_4(
+        Params memory params,
+        uint40 time,
+        uint256 previousBid,
+        uint256 newBid
+    )
+        external
+        whenAuctionMade
+        whenAuctionOn
+        givenWhenCallerHasPreviousBid
+        whenBidGtPreviousBid
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        time = boundUint40(time, details.startTime, details.startTime + details.duration);
+        vm.warp(time);
+
+        // Cached values
+        uint256 alice_originalBalance = decryptedTokenBalance(users.alice);
+        uint256 auction_originalBalance = decryptedTokenBalance(address(auction));
+
+        // Setup previous bid
+        previousBid = bound(previousBid, 1, BID2);
+        inEuint128 memory previousAmount = FheHelper.encrypt128(previousBid);
+        resetPrank(users.alice);
+        auction.bid(auctionData, previousAmount);
+
+        // Assert that the previous bid amount has been transferred from the caller to the contract
+        assertEq(decryptedTokenBalance(users.alice), alice_originalBalance - previousBid, "balanceOfEncrypted");
+        assertEq(decryptedTokenBalance(address(auction)), auction_originalBalance + previousBid, "balanceOfEncrypted");
+
+        // Create a new bid - bid is greater than the previous bid
+        newBid = bound(newBid, BID2 + 1, INITIAL_BALANCE);
+        inEuint128 memory newAmount = FheHelper.encrypt128(newBid);
+        auction.bid(auctionData, newAmount);
+
+        // Assert that the difference between encrypted bid values has been transferred from the caller to the contract
+        assertEq(decryptedTokenBalance(users.alice), alice_originalBalance - newBid, "balanceOfEncrypted");
+        assertEq(decryptedTokenBalance(address(auction)), auction_originalBalance + newBid, "balanceOfEncrypted");
+
+        // Assert that the bidPerAddr is updated for the caller
+        assertEq(getBidPerAddr(keccak256(auctionData), users.alice), newBid, "bidPerAddr");
+    }
+
+    function testFuzz_Bid_5(
+        Params memory params,
+        uint40 time,
+        uint256 previousBid,
+        uint256 newBid
+    )
+        external
+        whenAuctionMade
+        whenAuctionOn
+        givenWhenCallerHasPreviousBid
+        whenBidGtPreviousBid
+        givenWhenBidLtEqSecondHighestBid
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        time = boundUint40(time, details.startTime, details.startTime + details.duration);
+        vm.warp(time);
+
+        // Cached token balances before any bids
+        uint256 alice_originalBalance = decryptedTokenBalance(users.alice);
+        uint256 auction_originalBalance = decryptedTokenBalance(address(auction));
+
+        // Setup alice's previous bid - bids up to the reserve price
+        previousBid = bound(previousBid, 1, RESERVE_PRICE);
+        inEuint128 memory previousAmount = FheHelper.encrypt128(previousBid);
+        resetPrank(users.alice);
+        auction.bid(auctionData, previousAmount);
+
+        // Setting up highest bids
+        resetPrank(users.bob);
+        auction.bid(auctionData, FheHelper.encrypt128(BID1));
+
+        resetPrank(users.charlee);
+        auction.bid(auctionData, FheHelper.encrypt128(BID2));
+
+        // Cached state after highest bids made
+        bytes32 auctionHash = keccak256(auctionData);
+        (uint256 expectedBid1, uint256 expectedBid2) = getHighestBids(auctionHash);
+        address expectedBeneficiary = getBeneficiary(auctionHash);
+
+        // Alice bids below the second highest bid
+        newBid = bound(newBid, RESERVE_PRICE + 1, BID2);
+        resetPrank(users.alice);
+        auction.bid(auctionData, FheHelper.encrypt128(newBid));
+
+        // Assert that the second and highest bids are unchanged after alice's bid
+        (uint256 actualBid1, uint256 actualBid2) = getHighestBids(auctionHash);
+        assertEq(actualBid1, expectedBid1, "highest bid");
+        assertEq(actualBid2, expectedBid2, "second highest bid");
+
+        // Assert that the beneficiary is unchanged after alice's bid
+        assertEq(getBeneficiary(auctionHash), expectedBeneficiary, "beneficiary");
+
+        // Assert that the difference between encrypted bid values has been transferred from the caller to the contract
+        assertEq(decryptedTokenBalance(users.alice), alice_originalBalance - newBid, "balanceOfEncrypted");
+        assertEq(
+            decryptedTokenBalance(address(auction)),
+            auction_originalBalance + newBid + BID1 + BID2,
+            "balanceOfEncrypted"
+        );
+
+        // Assert that the bidPerAddr is updated for alice
+        assertEq(getBidPerAddr(keccak256(auctionData), users.alice), newBid, "bidPerAddr");
+    }
+
+    function testFuzz_Bid_6(
+        Params memory params,
+        uint40 time,
+        uint256 previousBid,
+        uint256 newBid
+    )
+        external
+        whenAuctionMade
+        whenAuctionOn
+        givenWhenCallerHasPreviousBid
+        whenBidGtPreviousBid
+        givenWhenBidGtSecondHighestBid
+        givenWhenBidLtEqHighestBid
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        time = boundUint40(time, details.startTime, details.startTime + details.duration);
+        vm.warp(time);
+
+        // Cached token balances before any bids
+        uint256 alice_originalBalance = decryptedTokenBalance(users.alice);
+        uint256 auction_originalBalance = decryptedTokenBalance(address(auction));
+
+        // Setup alice's previous bid - bids up to the reserve price
+        previousBid = bound(previousBid, 1, RESERVE_PRICE);
+        inEuint128 memory previousAmount = FheHelper.encrypt128(previousBid);
+        resetPrank(users.alice);
+        auction.bid(auctionData, previousAmount);
+
+        // Setting up highest bids
+        resetPrank(users.bob);
+        auction.bid(auctionData, FheHelper.encrypt128(BID1));
+
+        resetPrank(users.charlee);
+        auction.bid(auctionData, FheHelper.encrypt128(BID2));
+
+        // Cached state after highest bids made
+        bytes32 auctionHash = keccak256(auctionData);
+        (uint256 expectedBid1,) = getHighestBids(auctionHash);
+        address expectedBeneficiary = getBeneficiary(auctionHash);
+
+        // Alice bids above the second highest bid & below the highest
+        newBid = bound(newBid, BID2 + 1, BID1);
+        resetPrank(users.alice);
+        auction.bid(auctionData, FheHelper.encrypt128(newBid));
+
+        // Assert that the second highest bid is now alice's & the highest bid is unchanged
+        (uint256 actualBid1, uint256 actualBid2) = getHighestBids(auctionHash);
+        assertEq(actualBid1, expectedBid1, "highest bid");
+        assertEq(actualBid2, newBid, "second highest bid");
+
+        // Assert that the beneficiary is unchanged after alice's bid
+        assertEq(getBeneficiary(auctionHash), expectedBeneficiary, "beneficiary");
+
+        // Assert that the difference between encrypted bid values has been transferred from the caller to the contract
+        assertEq(decryptedTokenBalance(users.alice), alice_originalBalance - newBid, "balanceOfEncrypted");
+        assertEq(
+            decryptedTokenBalance(address(auction)),
+            auction_originalBalance + newBid + BID1 + BID2,
+            "balanceOfEncrypted"
+        );
+
+        // Assert that the bidPerAddr is updated for alice
+        assertEq(getBidPerAddr(keccak256(auctionData), users.alice), newBid, "bidPerAddr");
+    }
+
+    function testFuzz_Bid_7(
+        Params memory params,
+        uint40 time,
+        uint256 previousBid,
+        uint256 newBid
+    )
+        external
+        whenAuctionMade
+        whenAuctionOn
+        givenWhenCallerHasPreviousBid
+        whenBidGtPreviousBid
+        givenWhenBidGtSecondHighestBid
+        givenWhenBidGtHighestBid
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        time = boundUint40(time, details.startTime, details.startTime + details.duration);
+        vm.warp(time);
+
+        // Cached token balances before any bids
+        uint256 alice_originalBalance = decryptedTokenBalance(users.alice);
+        uint256 auction_originalBalance = decryptedTokenBalance(address(auction));
+
+        // Setup alice's previous bid - bids up to the reserve price
+        previousBid = bound(previousBid, 1, RESERVE_PRICE);
+        inEuint128 memory previousAmount = FheHelper.encrypt128(previousBid);
+        resetPrank(users.alice);
+        auction.bid(auctionData, previousAmount);
+
+        // Setting up highest bids
+        resetPrank(users.bob);
+        auction.bid(auctionData, FheHelper.encrypt128(BID1));
+
+        resetPrank(users.charlee);
+        auction.bid(auctionData, FheHelper.encrypt128(BID2));
+
+        // Cached state after highest bids made
+        bytes32 auctionHash = keccak256(auctionData);
+        (, uint256 expectedBid2) = getHighestBids(auctionHash);
+
+        // Alice bids above the highest bid & up to their encrypted token balance
+        newBid = bound(newBid, BID1 + 1, INITIAL_BALANCE);
+        resetPrank(users.alice);
+        auction.bid(auctionData, FheHelper.encrypt128(newBid));
+
+        // Assert that the second highest bid is unchanged & the highest bid is updated
+        (uint256 actualBid1, uint256 actualBid2) = getHighestBids(auctionHash);
+        assertEq(actualBid1, newBid, "highest bid");
+        assertEq(actualBid2, expectedBid2, "second highest bid");
+
+        // Assert that the beneficiary is now alice
+        assertEq(getBeneficiary(auctionHash), users.alice, "beneficiary");
+
+        // Assert that the difference between encrypted bid values has been transferred from the caller to the contract
+        assertEq(decryptedTokenBalance(users.alice), alice_originalBalance - newBid, "balanceOfEncrypted");
+        assertEq(
+            decryptedTokenBalance(address(auction)),
+            auction_originalBalance + newBid + BID1 + BID2,
+            "balanceOfEncrypted"
+        );
+
+        // Assert that the bidPerAddr is updated for alice
+        assertEq(getBidPerAddr(keccak256(auctionData), users.alice), newBid, "bidPerAddr");
     }
 }
