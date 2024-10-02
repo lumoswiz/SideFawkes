@@ -137,7 +137,7 @@ contract VickreyAuction is Vault, EncryptedVault {
         Auction.Bids storage bids_ = bids[auctionHash];
 
         // Bid & benficiary state variables
-        ebool bid1Bool = newBid.gt(bids_.bid1); // Cached - @note check if better for gas usage
+        ebool bid1Bool = newBid.gt(bids_.bid1);
         address beneficiary_ = FHE.decrypt(bid1Bool) == true ? msg.sender : currentBeneficiary;
 
         euint128 bid1Return = FHE.select(bid1Bool, newBid, bids_.bid1);

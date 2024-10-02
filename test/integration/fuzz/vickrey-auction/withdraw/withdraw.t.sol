@@ -84,6 +84,35 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         _;
     }
 
+    function testFuzz_ShouldFail_ZeroWithdrawAmount(
+        Params memory params,
+        uint256 time
+    )
+        external
+        whenAuctionMade
+        whenAuctionIsFinished
+        whenCallerNotBeneficiary
+    {
+        Auction.Details memory details = fuzzAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time after the auction ends
+        uint256 endTime = details.startTime + details.duration;
+        vm.assume(time > endTime);
+        vm.warp(time);
+
+        // Try to withdraw
+        vm.expectRevert("MockFheOps: req");
+        auction.withdraw(auctionData);
+    }
+
+    modifier givenWhenWithdrawAmountNonZero() {
+        _;
+    }
+
     function testFuzz_Withdraw(
         Params memory params,
         uint256 time,
@@ -93,6 +122,7 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         whenAuctionMade
         whenAuctionIsFinished
         whenCallerNotBeneficiary
+        givenWhenWithdrawAmountNonZero
     {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
