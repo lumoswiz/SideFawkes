@@ -1,14 +1,15 @@
-# when the auction has not been made for the auction hash
-## it should revert
-# when the auction has been made for the auction hash
-## when the auction has not finished
-### it should revert
-## when the auction has finished
-### when the caller is the beneficiary
-#### it should revert
-### when the caller is not the beneficiary
-#### given when the withdraw amount is zero
-##### it should revert
-#### given when the withdraw amount is greater than 0
-##### it should update the caller's bid balance to 0
-##### it should transfer the encrypted value of the (losing) bid balance from the contract to the caller
+withdraw.t.sol
+├── when the auction has not been made for the auction hash
+│   └── it should revert
+└── when the auction has been made for the auction hash
+    ├── when the auction has not finished
+    │   └── it should revert
+    └── when the auction has finished
+        ├── when the caller is the beneficiary
+        │   └── it should revert
+        └── when the caller is not the beneficiary
+            ├── given when the withdraw amount is zero
+            │   └── it should revert
+            └── given when the withdraw amount is greater than 0
+                ├── it should update the caller's bid balance to 0
+                └── it should transfer the encrypted value of the (losing) bid balance from the contract to the caller
