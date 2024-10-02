@@ -164,11 +164,14 @@ contract VickreyAuction is Vault, EncryptedVault {
         // Auction hash
         bytes32 auctionHash = keccak256(abi.encode(auction));
 
-        // Check that the caller is not the beneficiary
-        if (msg.sender == beneficiary[auctionHash]) revert Errors.BeneficiaryCannotWithdraw();
+        // Check auction is made
+        if (!auctionsMade[auctionHash]) revert Errors.AuctionNotMade({ auctionHash: auctionHash });
 
         // Check the auction is over
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
+
+        // Check that the caller is not the beneficiary
+        if (msg.sender == beneficiary[auctionHash]) revert Errors.BeneficiaryCannotWithdraw();
 
         // Cache withdraw amount
         euint128 withdrawAmount = bidsPerAddr[auctionHash][msg.sender];
