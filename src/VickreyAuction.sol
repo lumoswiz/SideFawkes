@@ -146,7 +146,10 @@ contract VickreyAuction is Vault, EncryptedVault {
 
         bids_.bid1 = bid1Return;
         bids_.bid2 = bid2Return;
-        beneficiary[auctionHash] = beneficiary_;
+
+        if (beneficiary_ != currentBeneficiary) {
+            beneficiary[auctionHash] = beneficiary_;
+        }
     }
 
     /**
