@@ -64,6 +64,7 @@ abstract contract Base_Test is Calculations, Constants, Events, Utils {
         users.proposer = createProposer();
         users.alice = createUser("alice");
         users.bob = createUser("bob");
+        users.charlee = createUser("charlee");
         users.beneficiary = createUser("beneficiary");
 
         // Set users
@@ -128,5 +129,42 @@ abstract contract Base_Test is Calculations, Constants, Events, Utils {
 
         // Create the auction
         auction.createAuction(details);
+    }
+
+    // Accessing storage variables
+
+    function getAuctionsMade(bytes32 auctionHash) internal view returns (bool) {
+        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_AUCTIONS_MADE));
+        return uint256(vm.load(address(auction), slot)) == 1 ? true : false;
+    }
+
+    function getHighestBids(bytes32 auctionHash) internal view returns (uint256, uint256) {
+        bytes32 slot0 = keccak256(abi.encode(auctionHash, SLOT_BIDS));
+        bytes32 slot0Value = vm.load(address(auction), slot0);
+
+        bytes32 slot1 = bytes32(uint256(slot0) + uint256(1));
+        bytes32 slot1Value = vm.load(address(auction), slot1);
+
+        return (uint256(slot0Value), uint256(slot1Value));
+    }
+
+    function getBidPerAddr(bytes32 auctionHash, address bidder) internal view returns (uint256) {
+        bytes32 slot = keccak256(abi.encode(bidder, keccak256(abi.encode(auctionHash, SLOT_BIDS_PER_ADDR))));
+        return uint256(vm.load(address(auction), slot));
+    }
+
+    function getBeneficiary(bytes32 auctionHash) internal view returns (address) {
+        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_BENEFICIARY));
+        return address(uint160(uint256(vm.load(address(auction), slot))));
+    }
+
+    function getClaimed(bytes32 auctionHash) internal view returns (bool) {
+        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_CLAIMED));
+        return uint256(vm.load(address(auction), slot)) == 1 ? true : false;
+    }
+
+    function getWithdrawn(bytes32 auctionHash) internal view returns (bool) {
+        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_WITHDRAWN));
+        return uint256(vm.load(address(auction), slot)) == 1 ? true : false;
     }
 }

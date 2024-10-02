@@ -12,14 +12,14 @@ contract PushTokens_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
         mintEncryptedAmount(address(harness), defaults.INITIAL_BALANCE());
     }
 
-    function test_HarnessDoesNotHaveEnoughTokens_NoTransfer() external {
+    function test_VaultDoesNotHaveEnoughTokens_NoTransfer() external {
         // Call `_pushTokens` with an encrypted amount greater than the vault's balance should revert
         euint128 amount = FHE.asEuint128(defaults.INITIAL_BALANCE() + 1);
         vm.expectRevert("MockFheOps: req");
         harness.exposed__pushTokens(address(payment), amount, users.alice);
     }
 
-    function test_pushTokens() external {
+    function test_PushTokens() external {
         // Call `_pushTokens`
         harness.exposed__pushTokens(address(payment), FHE.asEuint128(defaults.INITIAL_BALANCE()), users.alice);
 

@@ -22,7 +22,7 @@ contract PullTokens_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
         _;
     }
 
-    function test_pullTokens() external encryptedTokenApproval {
+    function test_PullTokens() external encryptedTokenApproval {
         inEuint128 memory inAmount = FheHelper.encrypt128(INITIAL_BALANCE);
 
         // Approve the harness contract

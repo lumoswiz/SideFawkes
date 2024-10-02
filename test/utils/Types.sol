@@ -8,6 +8,8 @@ struct Users {
     address alice;
     // Impartial user
     address bob;
+    // Impartial user
+    address charlee;
     // Default auction beneficiary.
     address beneficiary;
 }

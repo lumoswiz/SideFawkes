@@ -5,7 +5,7 @@ import { Vault_Unit_Concrete_Test } from "test/unit/concrete/vault/Vault.t.sol";
 import { IERC721Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract PullAsset_Unit_Concrete_Test is Vault_Unit_Concrete_Test {
-    function test_shouldFail_ProposerDoesNotOwnTokenId() external {
+    function test_ShouldFail_ProposerDoesNotOwnTokenId() external {
         uint256 id = 0;
         asset.mint(users.alice, id);
 

@@ -13,7 +13,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         vm.startPrank(users.proposer);
     }
 
-    function testFuzz_shouldFail_AuctionHashHasBeenMade(Auction.Details memory details) external {
+    function testFuzz_ShouldFail_AuctionHashHasBeenMade(Auction.Details memory details) external {
         // Store the auction hash in the contract
         bytes32 auctionHash = keccak256(abi.encode(details));
         bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_AUCTIONS_MADE));
@@ -28,7 +28,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         _;
     }
 
-    function testFuzz_shouldFail_CallerNotProposer(Auction.Details memory details) external whenAuctionNotMade {
+    function testFuzz_ShouldFail_CallerNotProposer(Auction.Details memory details) external whenAuctionNotMade {
         vm.assume(details.proposer != users.proposer);
 
         // Try to create the auction
@@ -40,7 +40,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         _;
     }
 
-    function testFuzz_shouldFail_StartTimeInThePast(Auction.Details memory details)
+    function testFuzz_ShouldFail_StartTimeInThePast(Auction.Details memory details)
         external
         whenAuctionNotMade
         whenCallerIsProposer
@@ -57,7 +57,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         _;
     }
 
-    function testFuzz_shouldFail_DurationGtMax(Auction.Details memory details)
+    function testFuzz_ShouldFail_DurationGtMax(Auction.Details memory details)
         external
         whenAuctionNotMade
         whenCallerIsProposer
@@ -99,11 +99,11 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         // Create the auction
         auction.createAuction(details);
 
-        // Assertions
-        assertEq(asset.ownerOf(details.tokenId), address(auction), "createAuction: ownerOf");
+        // Assert that the owner of the asset tokenId is now the auction contract
+        assertEq(asset.ownerOf(details.tokenId), address(auction), "ownerOf");
+
+        // Assert that the auction is made
         bytes32 auctionHash = keccak256(abi.encode(details));
-        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_AUCTIONS_MADE));
-        bytes32 slotValue_auctionsMade = vm.load(address(auction), slot);
-        assertEq(slotValue_auctionsMade, bytes32(uint256(1)), "createAuction: auctionsMade");
+        assertEq(getAuctionsMade(auctionHash), true, "auctionsMade");
     }
 }

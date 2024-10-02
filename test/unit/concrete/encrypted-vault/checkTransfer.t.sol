@@ -5,7 +5,7 @@ import { EncryptedVault_Unit_Concrete_Test } from "test/unit/concrete/encrypted-
 import { FHE, euint128, ebool } from "@fhenixprotocol/contracts/FHE.sol";
 
 contract CheckTransfer_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
-    function test_shouldRevert_AmountTokensNotTransferred() external {
+    function test_ShouldRevert_AmountTokensNotTransferred() external {
         // Mint an encrypted amount of tokens
         address user = makeAddr("user");
         mintEncryptedAmount(user, defaults.INITIAL_BALANCE());

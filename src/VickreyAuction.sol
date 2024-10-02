@@ -142,14 +142,11 @@ contract VickreyAuction is Vault, EncryptedVault {
 
         euint128 bid1Return = FHE.select(bid1Bool, newBid, bids_.bid1);
         euint128 bid2Return =
-            FHE.select(newBid.ne(bid1Return), FHE.select(newBid.gt(bids_.bid2), newBid, bids_.bid2), bids_.bid2);
+            FHE.select(newBid.gt(bids_.bid2), FHE.select(newBid.gt(bids_.bid1), bids_.bid2, newBid), bids_.bid2);
 
         bids_.bid1 = bid1Return;
         bids_.bid2 = bid2Return;
-
-        if (beneficiary_ != currentBeneficiary) {
-            beneficiary[auctionHash] = beneficiary_;
-        }
+        beneficiary[auctionHash] = beneficiary_;
     }
 
     /**

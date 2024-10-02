@@ -5,7 +5,7 @@ import { Vault_Unit_Concrete_Test } from "test/unit/concrete/vault/Vault.t.sol";
 import { IERC721Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract PushAsset_Unit_Concrete_Test is Vault_Unit_Concrete_Test {
-    function test_shouldFail_VaultDoesNotHaveAsset() external {
+    function test_ShouldFail_VaultDoesNotHaveAsset() external {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IERC721Errors.ERC721IncorrectOwner.selector, address(harness), TOKEN_ID, users.proposer
