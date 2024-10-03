@@ -24,11 +24,11 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         auction.createAuction(details);
     }
 
-    modifier whenAuctionNotMade() {
+    modifier givenWhenAuctionNotMade() {
         _;
     }
 
-    function testFuzz_ShouldFail_CallerNotProposer(Auction.Details memory details) external whenAuctionNotMade {
+    function testFuzz_ShouldFail_CallerNotProposer(Auction.Details memory details) external givenWhenAuctionNotMade {
         vm.assume(details.proposer != users.proposer);
 
         // Try to create the auction
@@ -42,7 +42,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
 
     function testFuzz_ShouldFail_StartTimeInThePast(Auction.Details memory details)
         external
-        whenAuctionNotMade
+        givenWhenAuctionNotMade
         whenCallerIsProposer
     {
         details.proposer = users.proposer; // Set caller as proposer
@@ -59,7 +59,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
 
     function testFuzz_ShouldFail_DurationGtMax(Auction.Details memory details)
         external
-        whenAuctionNotMade
+        givenWhenAuctionNotMade
         whenCallerIsProposer
         whenStartTimeValid
     {
@@ -80,7 +80,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
 
     function testFuzz_CreateAuction(Auction.Details memory details)
         external
-        whenAuctionNotMade
+        givenWhenAuctionNotMade
         whenCallerIsProposer
         whenStartTimeValid
         whenDurationValid

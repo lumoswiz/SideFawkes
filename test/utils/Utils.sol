@@ -75,7 +75,7 @@ contract Utils is Constants, Test {
         params.duration = boundUint40(params.duration, 1, MAX_DURATION);
 
         // Bound reserve price
-        params.reservePrice = bound(params.reservePrice, 0, INITIAL_BALANCE);
+        params.reservePrice = bound(params.reservePrice, 0, BID2 - 1);
 
         // Encrypt reserve price
         inEuint128 memory encryptedRp = FheHelper.encrypt128(params.reservePrice);

@@ -25,11 +25,11 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         auction.withdraw(auctionData);
     }
 
-    modifier whenAuctionMade() {
+    modifier givenWhenAuctionMade() {
         _;
     }
 
-    function testFuzz_ShouldFail_AuctionIsOn(Params memory params) external whenAuctionMade {
+    function testFuzz_ShouldFail_AuctionIsOn(Params memory params) external givenWhenAuctionMade {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
 
@@ -53,7 +53,7 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         uint40 time
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionIsFinished
     {
         Auction.Details memory details = fuzzAuctionDetails(params);
@@ -89,7 +89,7 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         uint256 time
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionIsFinished
         whenCallerNotBeneficiary
     {
@@ -119,7 +119,7 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         uint256 bid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionIsFinished
         whenCallerNotBeneficiary
         givenWhenWithdrawAmountNonZero

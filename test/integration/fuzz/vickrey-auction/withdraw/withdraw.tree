@@ -1,7 +1,7 @@
 withdraw.t.sol
-├── when the auction has not been made for the auction hash
+├── given when the auction has not been made for the auction hash
 │   └── it should revert
-└── when the auction has been made for the auction hash
+└── given when the auction has been made for the auction hash
     ├── when the auction has not finished
     │   └── it should revert
     └── when the auction has finished

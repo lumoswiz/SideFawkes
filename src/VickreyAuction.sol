@@ -142,7 +142,7 @@ contract VickreyAuction is Vault, EncryptedVault {
 
         euint128 bid1Return = FHE.select(bid1Bool, newBid, bids_.bid1);
         euint128 bid2Return =
-            FHE.select(newBid.gt(bids_.bid2), FHE.select(newBid.gt(bids_.bid1), bids_.bid2, newBid), bids_.bid2);
+            FHE.select(newBid.gt(bids_.bid2), FHE.select(newBid.gt(bids_.bid1), bids_.bid1, newBid), bids_.bid2);
 
         bids_.bid1 = bid1Return;
         bids_.bid2 = bid2Return;
@@ -204,14 +204,17 @@ contract VickreyAuction is Vault, EncryptedVault {
         // Auction hash
         bytes32 auctionHash = keccak256(abi.encode(auction));
 
-        // Check the asset has not been claimed successfully
-        if (claimed[auctionHash]) revert Errors.AlreadyClaimed();
+        // Check auction is made
+        if (!auctionsMade[auctionHash]) revert Errors.AuctionNotMade({ auctionHash: auctionHash });
 
         // Check the auction is over
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
 
         // Check the caller is the beneficiary
         if (msg.sender != beneficiary[auctionHash]) revert Errors.CallerNotBeneficiary();
+
+        // Check the asset has not been claimed successfully
+        if (claimed[auctionHash]) revert Errors.AlreadyClaimed();
 
         // Check that the auction was successful: second highest bid is greater than the reserve price
         Auction.Bids memory b = bids[auctionHash];

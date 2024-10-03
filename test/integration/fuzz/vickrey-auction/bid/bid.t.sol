@@ -26,11 +26,11 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         auction.bid(auctionData, amount);
     }
 
-    modifier whenAuctionMade() {
+    modifier givenWhenAuctionMade() {
         _;
     }
 
-    function testFuzz_ShouldFail_BeforeTheAuction(Params memory params) external whenAuctionMade {
+    function testFuzz_ShouldFail_BeforeTheAuction(Params memory params) external givenWhenAuctionMade {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
         inEuint128 memory amount = FheHelper.encrypt128(0);
@@ -49,7 +49,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         auction.bid(auctionData, amount);
     }
 
-    function testFuzz_ShouldFail_AfterAuction(Params memory params, uint256 time) external whenAuctionMade {
+    function testFuzz_ShouldFail_AfterAuction(Params memory params, uint256 time) external givenWhenAuctionMade {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
         inEuint128 memory amount = FheHelper.encrypt128(0);
@@ -87,7 +87,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint40 time
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerNoPreviousBid
     {
@@ -120,7 +120,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 bid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerNoPreviousBid
         whenBidGtZero
@@ -165,7 +165,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 bid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerNoPreviousBid
         whenBidGtZero
@@ -230,7 +230,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 bid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerNoPreviousBid
         whenBidGtZero
@@ -292,7 +292,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 bid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerNoPreviousBid
         whenBidGtZero
@@ -318,7 +318,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
 
         // Cached state
         bytes32 auctionHash = keccak256(auctionData);
-        (, uint256 expectedBid2) = getHighestBids(auctionHash);
+        (uint256 expectedBid2,) = getHighestBids(auctionHash);
         uint256 alice_originalBalance = decryptedTokenBalance(users.alice);
         uint256 auction_originalBalance = decryptedTokenBalance(address(auction));
 
@@ -327,7 +327,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         resetPrank(users.alice);
         auction.bid(auctionData, FheHelper.encrypt128(bid));
 
-        // Assert that the second highest bid is unchanged & the highest bid is updated
+        // Assert the previous highest bid is now the second highest, & highest is now alice's bid
         (uint256 actualBid1, uint256 actualBid2) = getHighestBids(auctionHash);
         assertEq(actualBid1, bid, "highest bid");
         assertEq(actualBid2, expectedBid2, "second highest bid");
@@ -362,7 +362,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 newBid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerHasPreviousBid
         whenBidLtEqPreviousBid
@@ -403,7 +403,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 newBid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerHasPreviousBid
         whenBidGtPreviousBid
@@ -452,7 +452,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 newBid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerHasPreviousBid
         whenBidGtPreviousBid
@@ -522,7 +522,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 newBid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerHasPreviousBid
         whenBidGtPreviousBid
@@ -593,7 +593,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         uint256 newBid
     )
         external
-        whenAuctionMade
+        givenWhenAuctionMade
         whenAuctionOn
         givenWhenCallerHasPreviousBid
         whenBidGtPreviousBid
@@ -629,14 +629,14 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
 
         // Cached state after highest bids made
         bytes32 auctionHash = keccak256(auctionData);
-        (, uint256 expectedBid2) = getHighestBids(auctionHash);
+        (uint256 expectedBid2,) = getHighestBids(auctionHash);
 
         // Alice bids above the highest bid & up to their encrypted token balance
         newBid = bound(newBid, BID1 + 1, INITIAL_BALANCE);
         resetPrank(users.alice);
         auction.bid(auctionData, FheHelper.encrypt128(newBid));
 
-        // Assert that the second highest bid is unchanged & the highest bid is updated
+        // Assert the previous highest bid is now the second highest, & highest is now alice's bid
         (uint256 actualBid1, uint256 actualBid2) = getHighestBids(auctionHash);
         assertEq(actualBid1, newBid, "highest bid");
         assertEq(actualBid2, expectedBid2, "second highest bid");
