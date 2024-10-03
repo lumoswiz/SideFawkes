@@ -171,37 +171,33 @@ contract ClaimSuccess_Unit_Fuzz_Test is Base_Test {
         givenWhenAssetNotClaimed
         whenGtEqReservePrice
     {
-        (Auction.Details memory details, bytes memory auctionData) = setupAuctionSuccess(params, time, bid);
+        bytes memory auctionData = setupAuctionSuccess(params, time, bid);
+        bytes32 auctionHash = keccak256(auctionData);
 
-        bytes32 h = keccak256(auctionData);
-        (uint256 actualB1, uint256 actualB2) = getHighestBids(h);
-        uint256 aliceBid = getBidPerAddr(h, users.alice);
-        uint256 bobBid = getBidPerAddr(h, users.bob);
-        uint256 charleeBid = getBidPerAddr(h, users.charlee);
-
-        emit log_named_uint("actualB1", actualB1);
-        emit log_named_uint("actualB2", actualB2);
-        emit log_named_uint("aliceBid", aliceBid);
-        emit log_named_uint("bobBid", bobBid);
-        emit log_named_uint("charleeBid", charleeBid);
-        emit log_named_uint("reserve price", FHE.decrypt(FHE.asEuint128(details.reservePrice)));
+        // Cached state
+        uint256 alice_beforeBalance = decryptedTokenBalance(users.alice);
+        uint256 auction_beforeBalance = decryptedTokenBalance(address(auction));
 
         // Alice claims asset
         auction.claimSuccess(auctionData);
+
+        // Assert that claimed is now true
+        assertEq(getClaimed(auctionHash), true, "claimed");
+
+        // Assert that the difference in encrypted value of the highest and second highest bids is transferred to caller
+        (uint256 bid1, uint256 bid2) = getHighestBids(auctionHash);
+        assertEq(decryptedTokenBalance(users.alice), alice_beforeBalance + (bid1 - bid2), "balanceOfEncrypted");
+        assertEq(decryptedTokenBalance(address(auction)), auction_beforeBalance - (bid1 - bid2), "balanceOfEncrypted");
+
+        // Assert that the NFT asset has been transferred to the beneficiary/alice
+        assertEq(asset.ownerOf(TOKEN_ID), users.alice, "ownerOf");
     }
 
     /*----------------------------------------------------------*|
     |*  # HELPERS                                               *|
     |*----------------------------------------------------------*/
 
-    function setupAuctionSuccess(
-        Params memory params,
-        uint40 time,
-        uint256 bid
-    )
-        internal
-        returns (Auction.Details memory, bytes memory)
-    {
+    function setupAuctionSuccess(Params memory params, uint40 time, uint256 bid) internal returns (bytes memory) {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
 
@@ -229,6 +225,6 @@ contract ClaimSuccess_Unit_Fuzz_Test is Base_Test {
         vm.assume(time > endTime);
         vm.warp(time);
 
-        return (details, auctionData);
+        return auctionData;
     }
 }
