@@ -247,14 +247,17 @@ contract VickreyAuction is Vault, EncryptedVault {
         // Auction hash
         bytes32 auctionHash = keccak256(abi.encode(auction));
 
-        // Check the asset has not been withdrawn successfully
-        if (withdrawn[auctionHash]) revert Errors.AlreadyWithdrawn();
+        // Check auction is made
+        if (!auctionsMade[auctionHash]) revert Errors.AuctionNotMade({ auctionHash: auctionHash });
 
         // Check the auction is over
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
 
         // Check the caller is the auction proposer
         if (msg.sender != auction.proposer) revert Errors.CallerNotBeneficiary();
+
+        // Check the asset has not been withdrawn successfully
+        if (withdrawn[auctionHash]) revert Errors.AlreadyWithdrawn();
 
         // Check that the auction was successful: second highest bid is greater than the reserve price
         // Cache the bids
@@ -266,11 +269,8 @@ contract VickreyAuction is Vault, EncryptedVault {
         // Update withdrawn
         withdrawn[auctionHash] = true;
 
-        // Transfer shield ERC-20 tokens to the proposer
-        euint128 bid2 = bids[auctionHash].bid2;
-
         // Transfer shielded tokens to the caller from the vault
-        _pushTokens(PAYMENT_TOKEN, bid2, msg.sender);
+        _pushTokens(PAYMENT_TOKEN, b.bid2, msg.sender);
     }
 
     /*----------------------------------------------------------*|

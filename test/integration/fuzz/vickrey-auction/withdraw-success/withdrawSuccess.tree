@@ -1,0 +1,18 @@
+withdrawSuccess.t.sol
+├── given when the auction has not been made for the auction hash
+│   └── it should revert
+└── given when the auction has been made for the auction hash
+    ├── when the auction has not finished
+    │   └── it should revert
+    └── when the auction has finished
+        ├── when the caller is not the auction proposer
+        │   └── it should revert
+        └── when the caller is the auction proposer
+            ├── given when the encrypted tokens have already been withdrawn
+            │   └── it should revert
+            └── given when the enrypted tokens have not been withdrawn
+                ├── given when the second highest bid is less than the reserve price
+                │   └── it should revert
+                └── given when the second highest bid is greater than, or equal, to the reserve price
+                    ├── it should update the tokens as withdrawn
+                    └── it should transfer the second highest bid amount of encrypted tokens to the proposer

@@ -9,12 +9,12 @@ import { inEuint128 } from "@fhenixprotocol/contracts/FHE.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
+contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
     function setUp() public override {
         super.setUp();
 
-        // Alice is the default caller of this suite
-        vm.startPrank(users.alice);
+        // Proposer is the default caller of this suite
+        vm.startPrank(users.proposer);
     }
 
     function testFuzz_ShouldFail_AuctionNotMade(Params memory params) external {
@@ -22,7 +22,7 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         bytes memory auctionData = abi.encode(details);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.AuctionNotMade.selector, keccak256(auctionData)));
-        auction.claimSuccess(auctionData);
+        auction.withdrawSuccess(auctionData);
     }
 
     modifier givenWhenAuctionMade() {
@@ -36,19 +36,16 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         // Create the auction
         createAuction(details);
 
-        // Reset prank
-        resetPrank(users.alice);
-
         // Try to withdraw
         vm.expectRevert(Errors.AuctionIsOn.selector);
-        auction.claimSuccess(auctionData);
+        auction.withdrawSuccess(auctionData);
     }
 
     modifier whenAuctionIsFinished() {
         _;
     }
 
-    function testFuzz_ShouldFail_CallerIsNotBeneficiary(
+    function testFuzz_ShouldFail_CallerIsNotProposer(
         Params memory params,
         uint40 time
     )
@@ -67,26 +64,26 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         vm.assume(time > endTime);
         vm.warp(time);
 
-        // Reset prank
+        // Reset prank to anyone but the proposer
         resetPrank(users.alice);
 
         // Try to withdraw
         vm.expectRevert(Errors.CallerNotBeneficiary.selector);
-        auction.claimSuccess(auctionData);
+        auction.withdrawSuccess(auctionData);
     }
 
-    modifier whenCallerIsBeneficiary() {
+    modifier whenCallerIsProposer() {
         _;
     }
 
-    function testFuzz_ShouldFail_AssetAlreadyClaimed(
+    function testFuzz_ShouldFail_AssetAlreadyWithdrawn(
         Params memory params,
         uint40 time
     )
         external
         givenWhenAuctionMade
         whenAuctionIsFinished
-        whenCallerIsBeneficiary
+        whenCallerIsProposer
     {
         Auction.Details memory details = fuzzAuctionDetails(params);
         bytes memory auctionData = abi.encode(details);
@@ -99,24 +96,16 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         vm.assume(time > endTime);
         vm.warp(time);
 
-        // Reset prank
-        resetPrank(users.alice);
-
-        // Set alice as the beneficiary
-        bytes32 auctionHash = keccak256(abi.encode(details));
-        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_BENEFICIARY));
-        vm.store(address(auction), slot, bytes32(uint256(uint160(users.alice)))); // value should be alice's address
-
-        // Set already claimed
-        slot = keccak256(abi.encode(auctionHash, SLOT_CLAIMED));
+        // Set already withdrawn
+        bytes32 slot = keccak256(abi.encode(keccak256(auctionData), SLOT_WITHDRAWN));
         vm.store(address(auction), slot, bytes32(uint256(1))); // value should be 1 (== true)
 
         // Try to withdraw
-        vm.expectRevert(Errors.AlreadyClaimed.selector);
-        auction.claimSuccess(auctionData);
+        vm.expectRevert(Errors.AlreadyWithdrawn.selector);
+        auction.withdrawSuccess(auctionData);
     }
 
-    modifier givenWhenAssetNotClaimed() {
+    modifier givenWhenTokensNotWithdrawn() {
         _;
     }
 
@@ -127,8 +116,8 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         external
         givenWhenAuctionMade
         whenAuctionIsFinished
-        whenCallerIsBeneficiary
-        givenWhenAssetNotClaimed
+        whenCallerIsProposer
+        givenWhenTokensNotWithdrawn
     {
         vm.assume(params.reservePrice > 0); // Non-zero reserve price
         Auction.Details memory details = fuzzAuctionDetails(params);
@@ -142,24 +131,16 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         vm.assume(time > endTime);
         vm.warp(time);
 
-        // Reset prank
-        resetPrank(users.alice);
-
-        // Set alice as the beneficiary
-        bytes32 auctionHash = keccak256(abi.encode(details));
-        bytes32 slot = keccak256(abi.encode(auctionHash, SLOT_BENEFICIARY));
-        vm.store(address(auction), slot, bytes32(uint256(uint160(users.alice)))); // value should be alice's address
-
         // Try to withdraw
         vm.expectRevert("MockFheOps: req");
-        auction.claimSuccess(auctionData);
+        auction.withdrawSuccess(auctionData);
     }
 
     modifier whenGtEqReservePrice() {
         _;
     }
 
-    function testFuzz_ClaimSuccess(
+    function testFuzz_WithdrawSuccess(
         Params memory params,
         uint40 time,
         uint256 bid
@@ -167,29 +148,29 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         external
         givenWhenAuctionMade
         whenAuctionIsFinished
-        whenCallerIsBeneficiary
-        givenWhenAssetNotClaimed
+        whenCallerIsProposer
+        givenWhenTokensNotWithdrawn
         whenGtEqReservePrice
     {
-        bytes memory auctionData = setupAuctionSuccess(params, time, bid);
+        bytes memory auctionData = setupAuctionSuccess(params, time, bid); // alice is caller from here
         bytes32 auctionHash = keccak256(auctionData);
 
+        // Reset prank to proposer
+        resetPrank(users.proposer);
+
         // Cached state
-        uint256 alice_beforeBalance = decryptedTokenBalance(users.alice);
+        uint256 proposer_beforeBalance = decryptedTokenBalance(users.proposer);
         uint256 auction_beforeBalance = decryptedTokenBalance(address(auction));
 
-        // Alice claims asset
-        auction.claimSuccess(auctionData);
+        // Proposer withdraws tokens
+        auction.withdrawSuccess(auctionData);
 
-        // Assert that claimed is now true
-        assertEq(getClaimed(auctionHash), true, "claimed");
+        // Assert that withdrawn is now true
+        assertEq(getWithdrawn(auctionHash), true, "withdrawn");
 
-        // Assert that the difference in encrypted value of the highest and second highest bids is transferred to caller
-        (uint256 bid1, uint256 bid2) = getHighestBids(auctionHash);
-        assertEq(decryptedTokenBalance(users.alice), alice_beforeBalance + (bid1 - bid2), "balanceOfEncrypted");
-        assertEq(decryptedTokenBalance(address(auction)), auction_beforeBalance - (bid1 - bid2), "balanceOfEncrypted");
-
-        // Assert that the NFT asset has been transferred to the beneficiary/alice
-        assertEq(asset.ownerOf(TOKEN_ID), users.alice, "ownerOf");
+        // Assert that the second highest bid encrypted value is transferred to the proposer
+        (, uint256 bid2) = getHighestBids(auctionHash);
+        assertEq(decryptedTokenBalance(users.proposer), proposer_beforeBalance + bid2, "balanceOfEncrypted");
+        assertEq(decryptedTokenBalance(address(auction)), auction_beforeBalance - bid2, "balanceOfEncrypted");
     }
 }
