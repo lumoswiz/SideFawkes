@@ -75,7 +75,31 @@ contract Utils is Constants, Test {
         params.duration = boundUint40(params.duration, 1, MAX_DURATION);
 
         // Bound reserve price
-        params.reservePrice = bound(params.reservePrice, 0, BID2 - 1);
+        params.reservePrice = bound(params.reservePrice, 1, BID2 - 1);
+
+        // Encrypt reserve price
+        inEuint128 memory encryptedRp = FheHelper.encrypt128(params.reservePrice);
+
+        return Auction.Details({
+            startTime: params.startTime,
+            proposer: proposer(),
+            duration: params.duration,
+            assetAddress: assetAddress(),
+            tokenId: TOKEN_ID,
+            reservePrice: encryptedRp
+        });
+    }
+
+    /// @dev Fuzzes the auction details with defaults for: proposer, tokenId and assetAddress.
+    function fuzzFailingAuctionDetails(Params memory params) internal view returns (Auction.Details memory) {
+        // Bound start time
+        params.startTime = boundUint40(params.startTime, getBlockTimestamp() + 1, MAX_UNIX_TIMESTAMP - MAX_DURATION);
+
+        // Bound duration - non-zero, up to max duration
+        params.duration = boundUint40(params.duration, 1, MAX_DURATION);
+
+        // Bound reserve price
+        params.reservePrice = bound(params.reservePrice, RESERVE_PRICE, INITIAL_BALANCE);
 
         // Encrypt reserve price
         inEuint128 memory encryptedRp = FheHelper.encrypt128(params.reservePrice);

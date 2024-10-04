@@ -1,0 +1,18 @@
+claimFail.t.sol
+├── given when the auction has not been made for the auction hash
+│   └── it should revert
+└── given when the auction has been made for the auction hash
+    ├── when the auction has not finished
+    │   └── it should revert
+    └── when the auction has finished
+        ├── when the caller is not the beneficiary
+        │   └── it should revert
+        └── when the caller is the beneficiary
+            ├── given when the asset has already been claimed
+            │   └── it should revert
+            └── given when the asset has not been claimed
+                ├── given when the second highest bid is greater than, or equal to, the reserve price
+                │   └── it should revert
+                └── given when the second highest bid is less than the reserve price
+                    ├── it should updated the encrypted tokens as claimed
+                    └── it should transfer the encrypted tokens equal to the highest bid value back to the beneficiary

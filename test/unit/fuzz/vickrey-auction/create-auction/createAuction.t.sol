@@ -32,7 +32,7 @@ contract CreateAuction_Unit_Fuzz_Test is Base_Test {
         vm.assume(details.proposer != users.proposer);
 
         // Try to create the auction
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotStatedProposer.selector, details.proposer));
+        vm.expectRevert(abi.encodeWithSelector(Errors.CallerNotProposer.selector, details.proposer));
         auction.createAuction(details);
     }
 

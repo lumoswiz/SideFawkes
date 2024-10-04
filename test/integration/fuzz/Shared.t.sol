@@ -22,8 +22,6 @@ contract Shared_Integration_Test is Base_Test {
         // Warp to a time when the auction is on
         vm.warp(details.startTime + 1);
 
-        // Bid values
-
         // Setting up bids - alice is highest bid & clear reserve price
         resetPrank(users.bob);
         auction.bid(auctionData, FheHelper.encrypt128(BID2));
@@ -32,6 +30,37 @@ contract Shared_Integration_Test is Base_Test {
         auction.bid(auctionData, FheHelper.encrypt128(RESERVE_PRICE));
 
         bid = bound(bid, BID1, INITIAL_BALANCE);
+        resetPrank(users.alice);
+        auction.bid(auctionData, FheHelper.encrypt128(bid));
+
+        // Warp to a time after the auction ends
+        uint256 endTime = details.startTime + details.duration;
+        vm.assume(time > endTime);
+        vm.warp(time);
+
+        return auctionData;
+    }
+
+    function setupAuctionFailed(Params memory params, uint40 time, uint256 bid) internal returns (bytes memory) {
+        Auction.Details memory details = fuzzFailingAuctionDetails(params);
+        bytes memory auctionData = abi.encode(details);
+
+        // Create the auction
+        createAuction(details);
+
+        // Warp to a time when the auction is on
+        vm.warp(details.startTime + 1);
+
+        // Setting up bids - alice is highest bid & clear reserve price
+        bid = bound(bid, 1, RESERVE_PRICE - 1);
+        resetPrank(users.bob);
+        auction.bid(auctionData, FheHelper.encrypt128(bid));
+
+        bid = bound(bid, 1, RESERVE_PRICE - 1);
+        resetPrank(users.charlee);
+        auction.bid(auctionData, FheHelper.encrypt128(bid));
+
+        bid = bound(bid, 1, RESERVE_PRICE - 1);
         resetPrank(users.alice);
         auction.bid(auctionData, FheHelper.encrypt128(bid));
 

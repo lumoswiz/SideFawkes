@@ -1,0 +1,18 @@
+withdrawFail.t.sol
+├── given when the auction has not been made for the auction hash
+│   └── it should revert
+└── given when the auction has been made for the auction hash
+    ├── when the auction has not finished
+    │   └── it should revert
+    └── when the auction has finished
+        ├── when the caller is not the auction proposer
+        │   └── it should revert
+        └── when the caller is the auction proposer
+            ├── given when the asset has already been withdrawn
+            │   └── it should revert
+            └── given when the asset has not been withdrawn
+                ├── given when the second highest bid is greater than, or equal to, the reserve price
+                │   └── it should revert
+                └── given when the second highest bid is less than the reserve price
+                    ├── it should update the asset as withdrawn
+                    └── it should transfer the asset to the proposer

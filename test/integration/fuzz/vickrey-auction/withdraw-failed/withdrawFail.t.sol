@@ -8,7 +8,7 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
+contract WithdrawFail_Unit_Fuzz_Test is Shared_Integration_Test {
     function setUp() public override {
         super.setUp();
 
@@ -21,7 +21,7 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         bytes memory auctionData = abi.encode(details);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.AuctionNotMade.selector, keccak256(auctionData)));
-        auction.withdrawSuccess(auctionData);
+        auction.withdrawFail(auctionData);
     }
 
     modifier givenWhenAuctionMade() {
@@ -37,7 +37,7 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
 
         // Try to withdraw
         vm.expectRevert(Errors.AuctionIsOn.selector);
-        auction.withdrawSuccess(auctionData);
+        auction.withdrawFail(auctionData);
     }
 
     modifier whenAuctionIsFinished() {
@@ -68,7 +68,7 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
 
         // Try to withdraw
         vm.expectRevert(abi.encodeWithSelector(Errors.CallerNotProposer.selector, details.proposer));
-        auction.withdrawSuccess(auctionData);
+        auction.withdrawFail(auctionData);
     }
 
     modifier whenCallerIsProposer() {
@@ -101,45 +101,14 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
 
         // Try to withdraw
         vm.expectRevert(Errors.AlreadyWithdrawn.selector);
-        auction.withdrawSuccess(auctionData);
+        auction.withdrawFail(auctionData);
     }
 
     modifier givenWhenTokensNotWithdrawn() {
         _;
     }
 
-    function testFuzz_ShouldFail_BelowReservePrice(
-        Params memory params,
-        uint40 time
-    )
-        external
-        givenWhenAuctionMade
-        whenAuctionIsFinished
-        whenCallerIsProposer
-        givenWhenTokensNotWithdrawn
-    {
-        vm.assume(params.reservePrice > 0); // Non-zero reserve price
-        Auction.Details memory details = fuzzAuctionDetails(params);
-        bytes memory auctionData = abi.encode(details);
-
-        // Create the auction
-        createAuction(details);
-
-        // Warp to a time after the auction ends
-        uint256 endTime = details.startTime + details.duration;
-        vm.assume(time > endTime);
-        vm.warp(time);
-
-        // Try to withdraw
-        vm.expectRevert("MockFheOps: req");
-        auction.withdrawSuccess(auctionData);
-    }
-
-    modifier whenGtEqReservePrice() {
-        _;
-    }
-
-    function testFuzz_WithdrawSuccess(
+    function testFuzz_ShouldFail_AboveReservePrice(
         Params memory params,
         uint40 time,
         uint256 bid
@@ -149,9 +118,34 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         whenAuctionIsFinished
         whenCallerIsProposer
         givenWhenTokensNotWithdrawn
-        whenGtEqReservePrice
     {
-        bytes memory auctionData = setupAuctionSuccess(params, time, bid); // alice is caller from here
+        bytes memory auctionData = setupAuctionSuccess(params, time, bid); // Alice is caller from here
+
+        // Reset prank
+        resetPrank(users.proposer);
+
+        // Try to withdraw
+        vm.expectRevert("MockFheOps: req");
+        auction.withdrawFail(auctionData);
+    }
+
+    modifier whenLtEqReservePrice() {
+        _;
+    }
+
+    function testFuzz_WithdrawFailed(
+        Params memory params,
+        uint40 time,
+        uint256 bid
+    )
+        external
+        givenWhenAuctionMade
+        whenAuctionIsFinished
+        whenCallerIsProposer
+        givenWhenTokensNotWithdrawn
+        whenLtEqReservePrice
+    {
+        bytes memory auctionData = setupAuctionFailed(params, time, bid); // alice is caller from here
         bytes32 auctionHash = keccak256(auctionData);
 
         // Reset prank to proposer
@@ -162,14 +156,16 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         uint256 auction_beforeBalance = decryptedTokenBalance(address(auction));
 
         // Proposer withdraws tokens
-        auction.withdrawSuccess(auctionData);
+        auction.withdrawFail(auctionData);
 
         // Assert that withdrawn is now true
         assertEq(getWithdrawn(auctionHash), true, "withdrawn");
 
-        // Assert that the second highest bid encrypted value is transferred to the proposer
-        (, uint256 bid2) = getHighestBids(auctionHash);
-        assertEq(decryptedTokenBalance(users.proposer), proposer_beforeBalance + bid2, "balanceOfEncrypted");
-        assertEq(decryptedTokenBalance(address(auction)), auction_beforeBalance - bid2, "balanceOfEncrypted");
+        // Assert that the encrypted balances of the proposer and auction do not change.
+        assertEq(decryptedTokenBalance(users.proposer), proposer_beforeBalance, "balanceOfEncrypted");
+        assertEq(decryptedTokenBalance(address(auction)), auction_beforeBalance, "balanceOfEncrypted");
+
+        // Assert that the asset is returned to the proposer
+        assertEq(asset.ownerOf(TOKEN_ID), users.proposer, "ownerOf");
     }
 }

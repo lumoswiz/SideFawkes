@@ -74,7 +74,7 @@ contract VickreyAuction is Vault, EncryptedVault {
         if (auctionsMade[auctionHash]) revert Errors.AuctionHashAlreadyMade(auctionHash);
 
         // Check caller is the proposer
-        if (msg.sender != auction.proposer) revert Errors.CallerIsNotStatedProposer({ proposer: auction.proposer });
+        if (msg.sender != auction.proposer) revert Errors.CallerNotProposer({ proposer: auction.proposer });
 
         // Check start time validity
         if (auction.startTime < block.timestamp) revert Errors.InvalidAuctionStartTime({ time: auction.startTime });
@@ -254,12 +254,11 @@ contract VickreyAuction is Vault, EncryptedVault {
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
 
         // Check the caller is the auction proposer
-        if (msg.sender != auction.proposer) revert Errors.CallerNotBeneficiary();
+        if (msg.sender != auction.proposer) revert Errors.CallerNotProposer({ proposer: auction.proposer });
 
         // Check the asset has not been withdrawn successfully
         if (withdrawn[auctionHash]) revert Errors.AlreadyWithdrawn();
 
-        // Check that the auction was successful: second highest bid is greater than the reserve price
         // Cache the bids
         Auction.Bids memory b = bids[auctionHash];
 
@@ -283,21 +282,24 @@ contract VickreyAuction is Vault, EncryptedVault {
      * @dev The caller is expected to be the highest bidder in an auction.
      * @param auctionData Encoded auction data.
      */
-    function claimFailed(bytes memory auctionData) external {
+    function claimFail(bytes memory auctionData) external {
         // Decode auction data
         Auction.Details memory auction = decodeAuctionData(auctionData);
 
         // Auction hash
         bytes32 auctionHash = keccak256(abi.encode(auction));
 
-        // Check the asset has not been claimed successfully
-        if (claimed[auctionHash]) revert Errors.AlreadyClaimed();
+        // Check auction is made
+        if (!auctionsMade[auctionHash]) revert Errors.AuctionNotMade({ auctionHash: auctionHash });
 
         // Check the auction is over
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
 
         // Check the caller is the beneficiary
         if (msg.sender != beneficiary[auctionHash]) revert Errors.CallerNotBeneficiary();
+
+        // Check the asset has not been claimed successfully
+        if (claimed[auctionHash]) revert Errors.AlreadyClaimed();
 
         // Check that the auction was successful: second highest bid is greater than the reserve price
         Auction.Bids memory b = bids[auctionHash];
@@ -317,21 +319,24 @@ contract VickreyAuction is Vault, EncryptedVault {
      * @dev Auction is unsuccessful when second highest bid fails to clear the reserve price.
      * @param auctionData Encoded auction data.
      */
-    function withdrawFailed(bytes memory auctionData) external {
+    function withdrawFail(bytes memory auctionData) external {
         // Decode auction data
         Auction.Details memory auction = decodeAuctionData(auctionData);
 
         // Auction hash
         bytes32 auctionHash = keccak256(abi.encode(auction));
 
-        // Check the asset has not been withdrawn successfully
-        if (withdrawn[auctionHash]) revert Errors.AlreadyWithdrawn();
+        // Check auction is made
+        if (!auctionsMade[auctionHash]) revert Errors.AuctionNotMade({ auctionHash: auctionHash });
 
         // Check the auction is over
         if (block.timestamp < auction.startTime + auction.duration) revert Errors.AuctionIsOn();
 
         // Check the caller is the auction proposer
-        if (msg.sender != auction.proposer) revert Errors.CallerNotBeneficiary();
+        if (msg.sender != auction.proposer) revert Errors.CallerNotProposer({ proposer: auction.proposer });
+
+        // Check the asset has not been withdrawn successfully
+        if (withdrawn[auctionHash]) revert Errors.AlreadyWithdrawn();
 
         // Cache the bids
         Auction.Bids memory b = bids[auctionHash];
@@ -343,7 +348,7 @@ contract VickreyAuction is Vault, EncryptedVault {
         withdrawn[auctionHash] = true;
 
         // Transfer asset back to the proposer
-        _pushAsset(msg.sender, auction.tokenId, msg.sender);
+        _pushAsset(auction.assetAddress, auction.tokenId, msg.sender);
     }
 
     /*----------------------------------------------------------*|

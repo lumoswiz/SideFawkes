@@ -10,7 +10,7 @@ library Errors {
     /**
      * @notice Thrown when a caller is not a stated proposer.
      */
-    error CallerIsNotStatedProposer(address proposer);
+    error CallerNotProposer(address proposer);
 
     /**
      * @notice Thrown when a caller is not the beneficiary.
