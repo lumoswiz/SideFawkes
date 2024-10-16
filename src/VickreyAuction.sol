@@ -2,7 +2,6 @@
 pragma solidity 0.8.25;
 
 import { inEuint128, euint128, ebool, FHE } from "@fhenixprotocol/contracts/FHE.sol";
-import { IFHERC20 } from "@fhenixprotocol/contracts/experimental/token/FHERC20/IFHERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { Vault } from "src/Vault.sol";

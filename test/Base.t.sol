@@ -5,14 +5,13 @@ import { Auction } from "src/types/DataTypes.sol";
 import { VickreyAuction } from "src/VickreyAuction.sol";
 import { Vault } from "src/Vault.sol";
 import { EncryptedVault } from "src/EncryptedVault.sol";
-import { IFHERC20 } from "src/token/IFHERC20.sol";
+import { Payment } from "src/token/Payment.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { FHE, inEuint128, euint128 } from "@fhenixprotocol/contracts/FHE.sol";
 
 import { StdUtils } from "forge-std/src/StdUtils.sol";
 import { Asset } from "test/mocks/Asset.sol";
-import { Payment } from "test/mocks/Payment.sol";
 import { Calculations } from "test/utils/Calculations.sol";
 import { Constants } from "test/utils/Constants.sol";
 import { Defaults } from "test/utils/Defaults.sol";

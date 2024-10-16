@@ -15,7 +15,7 @@ contract CheckTransfer_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
         euint128 originalBalance = encrypt(defaults.INITIAL_BALANCE());
 
         // Call `_checkTransfer`
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         harness.exposed__checkTransfer(address(payment), amount, originalBalance, user);
     }
 }

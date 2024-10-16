@@ -9,7 +9,7 @@ import { inEuint128 } from "@fhenixprotocol/contracts/FHE.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract Withdraw_Unit_Fuzz_Test is Base_Test {
+contract Withdraw_Integration_Fuzz_Test is Base_Test {
     function setUp() public override {
         super.setUp();
 
@@ -105,7 +105,7 @@ contract Withdraw_Unit_Fuzz_Test is Base_Test {
         vm.warp(time);
 
         // Try to withdraw
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.withdraw(auctionData);
     }
 

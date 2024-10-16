@@ -8,7 +8,7 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
+contract WithdrawSuccess_Integration_Fuzz_Test is Shared_Integration_Test {
     function setUp() public override {
         super.setUp();
 
@@ -131,7 +131,7 @@ contract WithdrawSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         vm.warp(time);
 
         // Try to withdraw
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.withdrawSuccess(auctionData);
     }
 

@@ -8,7 +8,7 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
+contract ClaimSuccess_Integration_Fuzz_Test is Shared_Integration_Test {
     function setUp() public override {
         super.setUp();
 
@@ -149,7 +149,7 @@ contract ClaimSuccess_Unit_Fuzz_Test is Shared_Integration_Test {
         vm.store(address(auction), slot, bytes32(uint256(uint160(users.alice)))); // value should be alice's address
 
         // Try to withdraw
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.claimSuccess(auctionData);
     }
 

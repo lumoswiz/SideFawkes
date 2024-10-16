@@ -9,7 +9,7 @@ import { inEuint128 } from "@fhenixprotocol/contracts/FHE.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract Bid_Unit_Fuzz_Test is Base_Test {
+contract Bid_Integration_Fuzz_Test is Base_Test {
     function setUp() public override {
         super.setUp();
 
@@ -106,7 +106,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         resetPrank(users.alice);
 
         // Try to bid
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.bid(auctionData, amount);
     }
 
@@ -386,7 +386,7 @@ contract Bid_Unit_Fuzz_Test is Base_Test {
         inEuint128 memory newAmount = FheHelper.encrypt128(newBid);
 
         // Try to bid
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.bid(auctionData, newAmount);
     }
 

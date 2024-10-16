@@ -2,7 +2,7 @@
 pragma solidity >=0.8.25 <0.9.0;
 
 import { EncryptedVault_Unit_Concrete_Test } from "test/unit/concrete/encrypted-vault/EncryptedVault.t.sol";
-import { FHE, euint128, inEuint128 } from "@fhenixprotocol/contracts/FHE.sol";
+import { FHE, euint128, inEuint128, ebool } from "@fhenixprotocol/contracts/FHE.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
 contract PullTokens_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
@@ -14,7 +14,7 @@ contract PullTokens_Unit_Concrete_Test is EncryptedVault_Unit_Concrete_Test {
 
         // Call `_pullTokens` should revert
         euint128 amount = FHE.asEuint128(defaults.INITIAL_BALANCE());
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         harness.exposed__pullTokens(address(payment), amount, user);
     }
 

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
-import { IFHERC20 } from "src/token/IFHERC20.sol";
 import { Auction } from "src/types/DataTypes.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { Payment } from "test/mocks/Payment.sol";
+import { Payment } from "src/token/Payment.sol";
 
 import { FHE, euint128 } from "@fhenixprotocol/contracts/FHE.sol";
 import { Constants } from "test/utils/Constants.sol";

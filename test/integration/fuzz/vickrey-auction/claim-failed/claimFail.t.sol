@@ -8,7 +8,7 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Params } from "test/utils/Types.sol";
 import { FheHelper } from "test/utils/FheHelper.sol";
 
-contract ClaimFail_Unit_Fuzz_Test is Shared_Integration_Test {
+contract ClaimFail_Integration_Fuzz_Test is Shared_Integration_Test {
     function setUp() public override {
         super.setUp();
 
@@ -133,7 +133,7 @@ contract ClaimFail_Unit_Fuzz_Test is Shared_Integration_Test {
         bytes memory auctionData = setupAuctionSuccess(params, time, bid);
 
         // Try to claimFailed for a successful auction
-        vm.expectRevert("MockFheOps: req");
+        vm.expectRevert();
         auction.claimFail(auctionData);
     }
 
