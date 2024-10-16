@@ -15,8 +15,9 @@ interface IPayment {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     function allowance(address owner, address spender) external view returns (uint256);
+    function allowanceEncrypted(address owner, address spender) external view returns (euint128);
     function approve(address spender, uint256 value) external returns (bool);
-    function approveEncrypted(address spender, inEuint128 memory amount) external returns (bool);
+    function approveEncrypted(address spender, inEuint128 memory amount) external;
     function balanceOf(address account) external view returns (uint256);
     function balanceOfEncrypted(address account) external view returns (euint128);
     function decimals() external view returns (uint8);
