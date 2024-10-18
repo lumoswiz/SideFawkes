@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import { FHE, euint128 } from "@fhenixprotocol/contracts/FHE.sol";
-import { IPayment } from "src/token/IPayment.sol";
+import { Payment } from "src/token/Payment.sol";
 
 /// Forked from: PWN Vault
 /// @dev Vault for handling FHERC20 tokens
@@ -14,14 +14,14 @@ contract EncryptedVault {
     function _pullTokens(address asset, euint128 amount, address origin) internal {
         euint128 originalBalance = balanceOf(asset, address(this));
 
-        IPayment(asset).transferFromEncrypted(origin, address(this), amount);
+        Payment(asset).transferFromEncrypted(origin, address(this), amount);
         _checkTransfer(asset, amount, originalBalance, address(this));
     }
 
     function _pushTokens(address asset, euint128 amount, address beneficiary) internal {
         euint128 originalBalance = balanceOf(asset, beneficiary);
 
-        IPayment(asset).transferEncrypted(beneficiary, amount);
+        Payment(asset).transferEncrypted(beneficiary, amount);
         _checkTransfer(asset, amount, originalBalance, beneficiary);
     }
 
@@ -44,6 +44,6 @@ contract EncryptedVault {
     |*----------------------------------------------------------*/
 
     function balanceOf(address asset, address target) public view returns (euint128) {
-        return IPayment(asset).balanceOfEncrypted(target);
+        return Payment(asset).balanceOfEncrypted(target);
     }
 }
